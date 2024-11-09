@@ -116,7 +116,6 @@ def main():
                                                     ' used only for the \"scale\" correction'
                                                     ' method')
     args = ap.parse_args()
-    librosa.key_to_degrees
     filepath = Path(args.vocals_file)
 
     # Load the audio file.
