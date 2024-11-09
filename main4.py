@@ -5,9 +5,13 @@ import psola
 import soundfile as sf
 import scipy.signal as sig
 from pathlib import Path
+from basic_pitch.inference import predict, Model, predict_and_save
+from basic_pitch import ICASSP_2022_MODEL_PATH
+basic_pitch_model = Model(ICASSP_2022_MODEL_PATH)
+
+
 
 SEMITONES_IN_OCTAVE = 12
-
 
 # KEY:
 """
@@ -58,22 +62,34 @@ def detect_scale(y, sr):
     
     # Common scales with their note patterns
     scales = {
-        'C Major': {'C', 'D', 'E', 'F', 'G', 'A', 'B'},
-        'G Major': {'G', 'A', 'B', 'C', 'D', 'E', 'F#'},
-        'D Major': {'D', 'E', 'F#', 'G', 'A', 'B', 'C#'},
-        'A Minor': {'A', 'B', 'C', 'D', 'E', 'F', 'G'},
-        'C Minor': {'C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb'},
-        'F Major': {'F', 'G', 'A', 'Bb', 'C', 'D', 'E'},
-        'Bb Major': {'Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'},
-        'Eb Major': {'Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'},
-        'E Minor': {'E', 'F#', 'G', 'A', 'B', 'C', 'D'},
-        'D Minor': {'D', 'E', 'F', 'G', 'A', 'Bb', 'C'},
-        'G Minor': {'G', 'A', 'Bb', 'C', 'D', 'Eb', 'F'},
-        'B Minor': {'B', 'C#', 'D', 'E', 'F#', 'G', 'A'},
-        'F# Minor': {'F#', 'G#', 'A', 'B', 'C#', 'D', 'E'},
-        'E Major': {'E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'}
-    }
-    
+    'C:maj': {'C', 'D', 'E', 'F', 'G', 'A', 'B'},
+    'G:maj': {'G', 'A', 'B', 'C', 'D', 'E', 'F#'},
+    'D:maj': {'D', 'E', 'F#', 'G', 'A', 'B', 'C#'}, 
+    'A:maj': {'A', 'B', 'C#', 'D', 'E', 'F#', 'G#'},
+    'E:maj': {'E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'},
+    'B:maj': {'B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'},
+    'F#:maj': {'F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'},
+    'C#:maj': {'C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'},
+    'F:maj': {'F', 'G', 'A', 'Bb', 'C', 'D', 'E'},
+    'Bb:maj': {'Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'},
+    'Eb:maj': {'Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'},
+    'Ab:maj': {'Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'},
+    'Db:maj': {'Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'},
+    'Gb:maj': {'Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'},
+    'A:min': {'A', 'B', 'C', 'D', 'E', 'F', 'G'},
+    'E:min': {'E', 'F#', 'G', 'A', 'B', 'C', 'D'},
+    'B:min': {'B', 'C#', 'D', 'E', 'F#', 'G', 'A'},
+    'F#:min': {'F#', 'G#', 'A', 'B', 'C#', 'D', 'E'},
+    'C#:min': {'C#', 'D#', 'E', 'F#', 'G#', 'A', 'B'},
+    'G#:min': {'G#', 'A#', 'B', 'C#', 'D#', 'E', 'F#'},
+    'D#:min': {'D#', 'E#', 'F#', 'G#', 'A#', 'B', 'C#'},
+    'D:min': {'D', 'E', 'F', 'G', 'A', 'Bb', 'C'},
+    'G:min': {'G', 'A', 'Bb', 'C', 'D', 'Eb', 'F'},
+    'C:min': {'C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb'},
+    'F:min': {'F', 'G', 'Ab', 'Bb', 'C', 'Db', 'Eb'},
+    'Bb:min': {'Bb', 'C', 'Db', 'Eb', 'F', 'Gb', 'Ab'},
+    'Eb:min': {'Eb', 'F', 'Gb', 'Ab', 'Bb', 'Cb', 'Db'}
+    }    
     # Find best matching scale
     best_match = None
     best_score = 0
@@ -166,7 +182,8 @@ def autotune(audio, sr, correction_function, scale):
     return psola.vocode(audio, sample_rate=int(sr), target_pitch=corrected_f0, fmin=fmin, fmax=fmax)
 
 if __name__ == "__main__":
-    y, sr = librosa.load("ABC.wav")# y = time series, sr = sampling rate
+    wavfile = "Ansh2.wav" 
+    y, sr = librosa.load(wavfile)# y = time series, sr = sampling rate
     f0, voiced_flag, voiced_prob = librosa.pyin(y, sr=sr, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'), frame_length=1024)
 
     # Apply noise gate to the audio samples
@@ -175,12 +192,25 @@ if __name__ == "__main__":
     # Perform the auto-tuning.
     # correction_function = closest_pitch if args.correction_method == 'closest' else \
     #     partial(aclosest_pitch_from_scale, scale=args.scale)
-    #detect_scale(y,sr).detected_scale
-    pitch_corrected_y = autotune(y, sr, aclosest_pitch_from_scale, "C:maj")
-    filepath = Path("ABC.wav")
+    pitch_corrected_y = autotune(y, sr, aclosest_pitch_from_scale, detect_scale(y,sr)["detected_scale"])
+    filepath = Path(wavfile)
 
 
     # Write the corrected audio to an output file.
     filepath = filepath.parent / (filepath.stem + '_pitch_corrected' + filepath.suffix)
+    corrected_wav = wavfile[:-3] + "_pitch_correct.wav"
     sf.write(str(filepath), pitch_corrected_y, sr)
+    # model_output, midi_data, note_events = predict("ABC_pitch_corrected.wav")
+    predict_and_save(
+        ["RB_pitch_corrected.wav"],
+        "midis",
+        True,
+        False,
+        False,
+        False,
+        basic_pitch_model
+    )
+
+
+
 
