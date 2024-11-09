@@ -10,6 +10,10 @@ from basic_pitch import ICASSP_2022_MODEL_PATH
 basic_pitch_model = Model(ICASSP_2022_MODEL_PATH)
 
 
+# phone records audio file (wav)
+# upload over bridge to project directory (somehow)
+# upload triggers an event
+# event runs main with the correct filename
 
 SEMITONES_IN_OCTAVE = 12
 
@@ -181,8 +185,8 @@ def autotune(audio, sr, correction_function, scale):
     # Pitch-shifting using the PSOLA algorithm.
     return psola.vocode(audio, sample_rate=int(sr), target_pitch=corrected_f0, fmin=fmin, fmax=fmax)
 
-if __name__ == "__main__":
-    wavfile = "Ansh2.wav" 
+def make_midi(wavfile):
+    wavfile = "inputs/" + wavfile
     y, sr = librosa.load(wavfile)# y = time series, sr = sampling rate
     f0, voiced_flag, voiced_prob = librosa.pyin(y, sr=sr, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'), frame_length=1024)
 
@@ -198,11 +202,11 @@ if __name__ == "__main__":
 
     # Write the corrected audio to an output file.
     filepath = filepath.parent / (filepath.stem + '_pitch_corrected' + filepath.suffix)
-    corrected_wav = wavfile[:-3] + "_pitch_correct.wav"
+    corrected_wav = wavfile[:-4] + "_pitch_corrected.wav"
     sf.write(str(filepath), pitch_corrected_y, sr)
     # model_output, midi_data, note_events = predict("ABC_pitch_corrected.wav")
     predict_and_save(
-        ["RB_pitch_corrected.wav"],
+        [corrected_wav],
         "midis",
         True,
         False,
