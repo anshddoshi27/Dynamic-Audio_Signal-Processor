@@ -1,11 +1,36 @@
 import librosa as lb
 import numpy as np
 import math
+from scipy.signal import medfilt
+import soundfile as sf
+
+def remove_vibrato(y, sr, f0, voiced_flag, window_size=11):
+    # 1. Smooth the f0 contour using median filtering
+    smoothed_f0 = medfilt(f0, window_size)
+    
+    # 2. Create a time-varying frequency shift
+    frequency_shift = f0 - smoothed_f0
+    
+    # 3. Phase vocoder to apply the frequency shift
+    D = lb.stft(y)
+    modified_D = lb.phase_vocoder(D=D, rate=1)
+    
+    # 4. Inverse STFT to get the modified audio
+    y_modified = lb.istft(modified_D)
+    
+    return y_modified
+
 
 y, sound = lb.load("ABC.wav")
 
 # Estimate pitch and voicing
 f0, voiced_flag, voiced_prob = lb.pyin(y, sr=sound, fmin=lb.note_to_hz('C2'), fmax=lb.note_to_hz('C7'), frame_length=1024)
+
+y_without_vibrato = remove_vibrato(y, sound, f0, voiced_flag)
+
+# Save the modified audio
+with open("output_no_vibrato.wav", "wb") as f:
+    sf.write(f, y_without_vibrato, sound)
 
 # Print the pitch values
 print(len(f0))
@@ -45,10 +70,17 @@ print(len(y))
 
 print(bpm)
 print(duration)
-
+freqs = []
 for freq in f0:
     if not math.isnan(freq):
         print(freq_to_note(freq))
+        freqs.append(freq_to_note(freq))
+
 
     # samples: [ A, A, A, A#, A, A#, A, A] -> vibrato
     # beats:     X        X          X 
+seen_freqs = set()
+for freq in freqs:
+    if freq not in seen_freqs:
+        seen_freqs.add(freq)
+        print(freqs.count(freq))
