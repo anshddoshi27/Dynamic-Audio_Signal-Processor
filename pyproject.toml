@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "untitled folder"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+PyAudio = "^0.2.14"
+numpy = "^2.1.2"
+matplotlib = "^3.9.2"
+llvmlite = "^0.43.0"
+soundfile = "^0.12.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
