@@ -1,4 +1,4 @@
-from main4 import make_midi
+from main import make_midi
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import subprocess
@@ -11,13 +11,10 @@ class AudioTransferHandler(FileSystemEventHandler):
 
     def on_created(self, event):
         filename = os.path.basename(event.src_path)
-        print("name " + filename)
-        print("truncated: " + filename[-10:])
 
         if(filename[-10:] == "rected.wav"):
             return
         make_midi(filename)
-        print(f"roman pooped: {filename}")
 
 def start_monitoring(recordings_path):
 
