@@ -27,4 +27,4 @@ def play_midi(midi_file_path):
     del midiout
 
 # Use the function
-play_midi("midis/inputurCv_pitch_corrected_basic_pitch.mid")
+play_midi("midis/inputBwvs_pitch_corrected_basic_pitch.mid")
