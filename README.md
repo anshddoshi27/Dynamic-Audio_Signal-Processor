@@ -1,1 +1,2 @@
-# HackUMassXII
+# Dynamic Audio Processing Machine 
+
